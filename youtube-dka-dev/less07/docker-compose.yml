@@ -1,0 +1,16 @@
+version: '3.3'
+
+services:
+  db:
+    build: ./db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: mysql
+    volumes:
+    - ./db/var_lib_mysql:/var/lib/mysql
+
+  adminer:
+    build: ./adminer
+    restart: always
+    ports:
+    - 8180:8080

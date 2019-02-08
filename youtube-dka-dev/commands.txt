@@ -1,0 +1,295 @@
+Docker уроки для начинающих от А до Я:
+https://www.youtube.com/watch?v=EbEZgdTOHzE&list=PLD5U-C5KK50XMCBkY0U-NLzglcRHzOwAg
+
+===================================================================
+ЧТО ТАКОЕ DOCKER (less01)
+===================================================================
+
+Docker состоит из:
+- образов (images): read-only шаблон (ubuntu,apache,mysql,php,app), используются для создания контейнеров
+- реестров (registries): докер реестры хранят образы (hub.docker.com)
+- контейнеров (containers): ubuntu + apache + mysql + php + app
+  контейнеры похожи на директории и содержат все, что нужно для работы приложения: ubuntu + apache + mysql + php + app
+  каждый контейнер создается из образа
+  контейнеры могут быть созданы, запущены, остановлены иди удалены
+  каждый контейнер изолирован и является безопасной платформой для приложения
+  в контейнер можно пробросить папки и порты с локальной машины
+
+
+docker-compose = утилита позволяющая связать несколько докер контейнеров между собой через конфиг файл и управлять единой конфигурацией (например запуск контейнера mysql с контейнером php)
+
+===================================================================
+ОСНОВНЫЕ КОМАНДЫ (less02)
+===================================================================
+
+Все команды докер запускаются от пользователя root (на локальной машине).
+
+sudo usermod -aG docker vitto = добавить текущего пользователя в группу докер для запуска комманд без sudo
+service docker restart
+
+docker run -it ubuntu bash
+    -it = создать интерактивный сеанс работы на подключаемом терминальном устройстве
+    bash = запуск bash
+
+    после загрузки образа (pull ubuntu) docker помещает его (run) в контейнер на локальной машине: pull -> run -> container
+    при выходе из командной оболочки контейнер прекратит работу
+    контейнеры работают пока существует их основной процесс
+
+docker ps
+    список работающих контейнеров БЕЗ остановленных.
+
+docker ps -a
+    список контейнеров включая остановленные.
+    можно запустить командой docker start <name>
+
+docker start testapp
+    запуск остановленного ранее контейнера
+
+docker start -i testapp
+    запуск остановленного ранее контейнера в интерактивном режиме
+
+docker stop testapp
+    остановка запущенного ранее контейнера
+
+docker kill testapp
+    принудительная остановка контейнера
+
+
+docker run -h CONTAINER -it ubuntu bash
+    запуск контейнера с указанием хоста
+
+    если не указано имя, докер сам назначает его, посмотреть можно командой docker ps [-a]
+
+    можно передать параметры выполняемой команде
+    docker run ubuntu bash echo Test
+
+docker run --name dkadevelop -it ubuntu bash
+    запуск контейнера с указанием имени контейнера
+
+docker inspect <имя-контейнера>
+    расширенная информация о контейнере
+
+
+docker diff <имя-контейнера>
+    показывает изменения относительно оригинального образа (например, установленные файлы)
+
+docker logs <имя-контейнера>
+    список всех событий произошедших внутри контейнера
+
+docker rm <имя-контейнера>
+    удаление остановленного контейнера
+
+docker ps -aq -f status=exited
+    список идентификаторов всех остановленных контейнеров
+
+docker rm -v $(docker ps -aq -f status=exited)
+    удаление по списку идентификаторов всех остановленных контейнеров
+
+docker run -d -p 8000:8080 bitnami/apache
+    -d = запуск в фоновом режиме
+    -p = проброс портов
+    bitnami/apache = образ с hub.docker.com
+
+docker ps
+    в колонке "Ports" можно посмотреть порты используемые зупущенным образом, это позволит правильно смапить их с локальной машиной
+
+docker stop <имя-контейнера>
+    Остановка контейнера
+
+docker images
+    Список всех загруженных образов
+
+===================================================================
+СОЗДАНИЕ ОБРАЗА (less03)
+===================================================================
+
+docker run -it --name myapp --hostname myapp ubuntu bash
+apt update
+apt install cowsay
+ln -s /usr/games/cowsay /usr/bin/cowsay
+cowsay "TEST"
+
+docker login
+docker commit myapp dockerid/myappimage
+docker run dockerid/myappimage cowsay "TEST"
+docker push dockerid/myappimage
+
+-----------------------------------------------
+
+docker run    == Run a command in a new container
+docker start  == Start one or more stopped containers
+docker ps -a  == To see all containers in this case
+docker rm     == To remove container
+
+docker images == список образов на локальной машине
+
+-----------------------------------------------
+
+docker start -i testapp
+
+docker run orlov0562/testapp cowsay "Hi"   == Запустить на локальном компе
+
+docker push orlov0562/testapp  == Загрузить образ в Docker Hub
+
+docker rm -v $(docker ps -aq -f status=exited)  == удалить все остановленные контейнеры
+
+docker images == список образов
+
+docker rmi <image-id> == удалить образ
+
+docker run orlov0562/testapp cowsay "Hi"
+
+
+===================================================================
+СОЗДАНИЕ ОБРАЗА С ИСПОЛЬЗОВАНИЕМ Dockerfile (less04)
+===================================================================
+
+cd less04
+docker build -t orlov0562/less04 .
+    - t = имя образа
+
+docker build -t testimage .
+    после билда можно запускать образ
+    docker run -it --name testapp testimage mc
+
+    или в случае наличия ENTRYPOINT
+    docker run -it --name testapp testimage
+
+
+===================================================================
+СОЕДИНЕНИЕ КОНТЕЙНЕРОВ МЕЖДУ СОБОЙ
+===================================================================
+
+docker run --name mysqlserver -e MYSQL_ROOT_PASSWORD=mysql -d mariadb:latest
+    установка mysql
+
+    --name mysqlserver == имя контейнера который получится
+    -e MYSQL_ROOT_PASSWORD=mysql == пароль для доступа
+    -d mariadb:latest == название образа (:latest - тэг, версия)
+
+docker ps
+    проверяем работает ли контейнер, какое имя и на каком порту
+
+docker run -d --name=adminer --link mysqlserver:db -p 8180:8080 adminer
+    установка adminer
+
+    -p 8180:8080 == 8180 - локальный порт; 8080 - порт сервиса
+
+    -d = Запуск в отсоединенном режиме (detached mode), для скрытия логов
+
+    --link mysqlserver:db = создание связи с контейнером mysqlserver в сети
+        в /etc/hosts прописывется <ip mysqlserver-а> <db>, так мы можем ссылаться через db на адрес mysqlserver
+
+        другой способ добиться соединения, это публикация сервисов (?? docker publish services ??)
+
+
+теперь можно зайти на localhost:8180 и ввести root/mysql для доступа к бд
+
+===================================================================
+DOCKER-COMPOSE (less06)
+===================================================================
+
+    **  в версии 3 файла docekr-compose.yml по умолчанию контейнеры в bridge работают, поэтому link не надо указывать
+
+    Переменные можно задать в отдельном файле ".env" ?? и использовать в docker-compose.yml ??
+    PHP_VERSION=${PHP_VERSION}
+
+docker -v
+    проверка версий compose: https://docs.docker.com/compose/compose-file/compose-versioning/
+
+docker-compose -v
+    проверка версий compose (Compose file format compatibility matrix): https://github.com/docker/compose/releases
+
+dock-compose up
+    запуск docker-compose.yml (Create and start containers)
+
+    dock-compose up -d
+        запуск в detached mode
+
+все команды docker-compose (у каждой команды есть свои опции и справка)
+    build              Build or rebuild services
+    bundle             Generate a Docker bundle from the Compose file
+    config             Validate and view the Compose file
+    create             Create services
+    down               Stop and remove containers, networks, images, and volumes
+    events             Receive real time events from containers
+    exec               Execute a command in a running container
+    help               Get help on a command
+    images             List images
+    kill               Kill containers
+    logs               View output from containers
+    pause              Pause services
+    port               Print the public port for a port binding
+    ps                 List containers
+    pull               Pull service images
+    push               Push service images
+    restart            Restart services
+    rm                 Remove stopped containers
+    run                Run a one-off command
+    scale              Set number of containers for a service
+    start              Start services
+    stop               Stop services
+    top                Display the running processes
+    unpause            Unpause services
+    up                 Create and start containers
+    version            Show the Docker-Compose version information
+
+
+===================================================================
+DOCKER-COMPOSE + Dockerfile (less07)
+===================================================================
+
+volumes - тома, элементы файловой системы хоста смонтированные в файловую систему контейнера
+
+Три способа монтирования:
+1) docker run -ti -v /data ubuntu bash = монтирование при запуске
+
+   /data = рсаположение в контейнере
+
+   проверить место расположения внутри хоста, можно найти так
+    docker inspect -f {{.Mounts}} <имя-контейнера>
+    будет что-то типа: /ar/lib/docker/vloumes/6cdd../_data
+
+2) Тоже самое, но указать папку в docker run формате /home/vitto/data:/data
+   где /home/vitto/data адрес на локальном компе
+
+   docker run -ti -v /home/vitto:/data ubuntu bash
+
+3) В Dockerfile определяется как
+   VOLUME /data
+
+   и не поддерживает уазание хост папки: https://docs.docker.com/engine/reference/builder/#volume
+   !!! The VOLUME instruction does not support specifying a host-dir parameter. You must specify the mountpoint when you create or run the container.
+
+
+docker-compose rm <имя сервиса>
+    использует имя контейнера которое было сгенерировано при запуске docker-compose
+    т.е. вместо docker rm less07_db_1
+    пишем docker-compose rm db
+
+
+===================================================================
+UnionFS (less09)
+===================================================================
+
+Слои UnionFS
+
+[USER LAYER] -- r/w
+[WEB SERVER] -- r/o
+[DAEMONS] -- r/o
+[UBUNTU] -- r/o
+
+каждая команда в RUN Dockerfile-а, создает отдельный слой
+
+docker images
+    список образов
+
+docker history
+    список слоев "изменений"
+
+
+docker rm -v $(docker ps -aq -f status=exited)
+    удалить все контейнеры
+
+docker rmi $(docker images -q) --force
+    удалить все образы

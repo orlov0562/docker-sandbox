@@ -1,0 +1,14 @@
+version: '3.3'
+
+services:
+  db:
+    image: mariadb
+    restart: always     # автоматический перезапуск при завершении: no = никогда (по-умолчанию); on-failure = после сбоя; always = всегда
+    environment: # аналогично ключу -e в docker run, служит для определения переменных среды выполнения
+      MYSQL_ROOT_PASSWORD: mysql
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+    - 8180:8080
