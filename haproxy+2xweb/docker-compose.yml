@@ -1,0 +1,33 @@
+version: '3'
+
+services:
+
+  haproxy:
+    build: ./haproxy
+    restart: always
+    ports:
+    - 8080:80
+    volumes:
+    - ./haproxy/etc:/usr/local/etc/haproxy/
+
+  web_1:
+    build: ./web_1
+    restart: always
+    environment:
+    - APACHE_RUN_USER=#1000
+    volumes:
+    - ./web_1/html:/var/www/html
+    ports:
+    - 8081:80
+    working_dir: /var/www/html
+
+  web_2:
+    build: ./web_2
+    restart: always
+    environment:
+    - APACHE_RUN_USER=#1000
+    volumes:
+    - ./web_2/html:/var/www/html
+    ports:
+    - 8082:80
+    working_dir: /var/www/html
