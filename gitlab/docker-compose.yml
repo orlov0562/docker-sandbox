@@ -1,0 +1,20 @@
+version: '3'
+
+services:
+
+  gitlab:
+    image: 'gitlab/gitlab-ce:latest'
+    restart: always
+    hostname: 'homenet100'
+#    environment:
+#      GITLAB_OMNIBUS_CONFIG: |
+#        external_url 'http://homenet100:80'
+#        gitlab_rails['gitlab_shell_ssh_port'] = 8022
+    ports:
+    - '8080:80'
+    - '8022:22'
+    - '8043:443'
+    volumes:
+    - ./config:/etc/gitlab
+    - ./logs:/var/log/gitlab
+    - ./data:/var/opt/gitlab
